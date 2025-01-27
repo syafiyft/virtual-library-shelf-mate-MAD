@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'book_detail.dart';
+
+
 
 class BooksPage extends StatelessWidget {
   final List<String> bookCovers = [
@@ -108,26 +111,41 @@ class BookItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: Image.asset(
-            bookCover,
-            fit: BoxFit.cover,
-            width: double.infinity,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BookDetailPage(
+              title: "The Odyssey",
+              author: "Homer",
+              description:
+              "Like the Iliad, the Odyssey is divided into 24 books. It follows the Greek hero Odysseus, king of Ithaca, and his journey home after the Trojan War.",
+              imagePath: bookCover,
+            ),
           ),
-        ),
-        SizedBox(height: 10),
-        Text(
-          "Book Title",
-          style: TextStyle(
-            fontFamily: 'Afacad',
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        );
+      },
+      child: Column(
+        children: [
+          Expanded(
+            child: Image.asset(
+              bookCover,
+              fit: BoxFit.cover,
+              width: double.infinity,
+            ),
           ),
-        ),
-      ],
+          SizedBox(height: 10),
+          Text(
+            "Book Title",
+            style: TextStyle(
+              fontFamily: 'Afacad',
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
-
