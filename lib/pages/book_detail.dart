@@ -16,9 +16,9 @@ class BookDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFD966), // Match yellow background
+      backgroundColor: Color(0xFFFFC21A), // Match yellow background
       appBar: AppBar(
-        backgroundColor: Color(0xFFFFD966),
+        backgroundColor: Color(0xFFFFC21A),
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
