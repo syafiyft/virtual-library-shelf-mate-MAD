@@ -59,7 +59,7 @@ Before running the project, ensure that you have the following installed:
 
 ### **2. Clone the Repository**
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/Virtual-Library-ShelfMate.git
+git clone [https://github.com/syafiyft/virtual-library-shelf-mate-MAD.git]
 cd Virtual-Library-ShelfMate
 ```
 
