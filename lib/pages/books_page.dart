@@ -1,17 +1,69 @@
 import 'package:flutter/material.dart';
+import 'dart:convert'; // For JSON decoding
+import 'package:http/http.dart' as http;
 import 'book_detail.dart';
 
+class BooksPage extends StatefulWidget {
+  const BooksPage({super.key});
 
+  @override
+  State<BooksPage> createState() => _BooksPageState();
+}
 
-class BooksPage extends StatelessWidget {
-  final List<String> bookCovers = [
-    'assets/book1.jpg',
-    'assets/book2.jpg',
-    'assets/book3.jpg',
-    'assets/book4.jpg',
-    'assets/book5.jpg',
-    'assets/book6.jpg',
-  ];
+class _BooksPageState extends State<BooksPage> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, String>> _books = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBooks("bestsellers"); // Fetch random books on page load
+  }
+
+  // Fetch books from Google Books API
+  Future<void> _fetchBooks(String query) async {
+    final apiUrl =
+        'https://www.googleapis.com/books/v1/volumes?q=$query&maxResults=40';
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<Map<String, String>> books = [];
+
+        for (var item in data['items'] ?? []) {
+          final volumeInfo = item['volumeInfo'];
+          books.add({
+            'id': item['id'] ?? 'Unknown ID',
+            'title': volumeInfo['title'] ?? 'Unknown Title',
+            'author': (volumeInfo['authors'] != null)
+                ? volumeInfo['authors'][0]
+                : 'Unknown Author',
+            'thumbnail': volumeInfo['imageLinks']?['thumbnail'] ?? '',
+            'description':
+                volumeInfo['description'] ?? 'No description available',
+            'previewLink': volumeInfo['previewLink'] ?? '',
+            'rating': volumeInfo['averageRating']?.toString() ?? 'N/A',
+          });
+        }
+
+        setState(() {
+          _books = books;
+        });
+      }
+    } catch (error) {
+      print('Error fetching books: $error');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,15 +71,16 @@ class BooksPage extends StatelessWidget {
       body: Stack(
         children: [
           Container(
-            color: Color(0xFFFFFBEA),
+            color: const Color(0xFFFFFBEA),
           ),
           Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                 child: Column(
                   children: [
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
@@ -41,16 +94,17 @@ class BooksPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     TextField(
-                      style: TextStyle(
+                      controller: _searchController,
+                      style: const TextStyle(
                         fontFamily: 'Afacad',
                         fontSize: 16,
                         color: Colors.black,
                       ),
                       decoration: InputDecoration(
                         labelText: 'Search for books',
-                        labelStyle: TextStyle(
+                        labelStyle: const TextStyle(
                           fontFamily: 'Afacad',
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -62,17 +116,21 @@ class BooksPage extends StatelessWidget {
                         ),
                         filled: true,
                         fillColor: Colors.grey[200],
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           vertical: 10,
                           horizontal: 20,
                         ),
-                        suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 15),
-                          child: Icon(
+                        suffixIcon: IconButton(
+                          icon: const Icon(
                             Icons.search,
                             color: Color(0xFFFFCF23),
                             size: 28,
                           ),
+                          onPressed: () {
+                            if (_searchController.text.isNotEmpty) {
+                              _fetchBooks(_searchController.text);
+                            }
+                          },
                         ),
                       ),
                     ),
@@ -80,21 +138,42 @@ class BooksPage extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: GridView.builder(
-                    itemCount: bookCovers.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 0.7,
-                    ),
-                    itemBuilder: (context, index) {
-                      return BookItem(bookCover: bookCovers[index]);
-                    },
-                  ),
-                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _books.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No books found. Try searching for something else!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: GridView.builder(
+                              itemCount: _books.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 20,
+                                mainAxisSpacing: 20,
+                                childAspectRatio: 0.7,
+                              ),
+                              itemBuilder: (context, index) {
+                                return BookItem(
+                                  title: _books[index]['title']!,
+                                  author: _books[index]['author']!,
+                                  thumbnail: _books[index]['thumbnail']!,
+                                  description: _books[index]['description']!,
+                                  previewLink: _books[index]['previewLink']!,
+                                  rating: _books[index]['rating']!,
+                                  id: _books[index]['id'] ?? 'Unknown ID',
+                                );
+                              },
+                            ),
+                          ),
               ),
             ],
           ),
@@ -105,9 +184,24 @@ class BooksPage extends StatelessWidget {
 }
 
 class BookItem extends StatelessWidget {
-  final String bookCover;
+  final String title;
+  final String author;
+  final String thumbnail;
+  final String description;
+  final String previewLink;
+  final String rating;
+  final String id;
 
-  BookItem({required this.bookCover});
+  const BookItem({
+    super.key,
+    required this.title,
+    required this.author,
+    required this.thumbnail,
+    required this.description,
+    required this.previewLink,
+    required this.rating,
+    required this.id,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -117,11 +211,13 @@ class BookItem extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => BookDetailPage(
-              title: "The Odyssey",
-              author: "Homer",
-              description:
-              "Like the Iliad, the Odyssey is divided into 24 books. It follows the Greek hero Odysseus, king of Ithaca, and his journey home after the Trojan War.",
-              imagePath: bookCover,
+              title: title,
+              author: author,
+              description: description,
+              imagePath: thumbnail,
+              previewLink: previewLink,
+              rating: rating,
+              bookId: id,
             ),
           ),
         );
@@ -129,19 +225,31 @@ class BookItem extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: Image.asset(
-              bookCover,
+            child: Image.network(
+              thumbnail,
               fit: BoxFit.cover,
               width: double.infinity,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
-            "Book Title",
-            style: TextStyle(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
               fontFamily: 'Afacad',
               fontSize: 16,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            author,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: 'Afacad',
+              fontSize: 14,
+              color: Colors.grey,
             ),
           ),
         ],

@@ -1,69 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/favorites_provider.dart';
+import 'book_detail.dart';
 
 class FavouritesPage extends StatelessWidget {
+  const FavouritesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+
     return Scaffold(
       body: Stack(
         children: [
           Container(
-            color: Color(0xFFFFFBEA),
+            color: const Color(0xFFFFFBEA),
           ),
-          Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.black12,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    child: Column(
+          Column(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                child: const Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Favourites',
-                              style: TextStyle(
-                                fontFamily: 'Afacad',
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          'Favourites',
+                          style: TextStyle(
+                            fontFamily: 'Afacad',
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
-                        SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              "My List",
-                              style: TextStyle(
-                                fontFamily: 'Afacad',
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        )
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: favoritesProvider.favorites.length,
+                  itemBuilder: (context, index) {
+                    final book = favoritesProvider.favorites[index];
+                    return ListTile(
+                      leading: book['imagePath']!.isNotEmpty
+                          ? Image.network(book['imagePath']!)
+                          : const Icon(Icons.book),
+                      title: Text(book['title']!),
+                      subtitle: Text('by ${book['author']}'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookDetailPage(
+                              title: book['title']!,
+                              author: book['author']!,
+                              description: book['description']!,
+                              imagePath: book['imagePath']!,
+                              previewLink: book['previewLink']!,
+                              rating: book['rating']!,
+                              bookId: book['id'] ?? 'Unknown ID',
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),

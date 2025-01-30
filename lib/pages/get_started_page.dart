@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class GetStartedPage extends StatefulWidget {
+  const GetStartedPage({super.key});
+
   @override
   _GetStartedPageState createState() => _GetStartedPageState();
 }
@@ -10,7 +12,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
   void initState() {
     super.initState();
 
-    Future.delayed(Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 2), () {
       Navigator.pushReplacementNamed(context, 'logIn');
     });
   }
@@ -21,7 +23,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
       body: Stack(
         children: [
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/getStarted_background.png'),
                 fit: BoxFit.cover,

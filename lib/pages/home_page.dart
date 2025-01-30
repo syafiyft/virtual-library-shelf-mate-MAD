@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'books_page.dart';
 import 'favourites_page.dart';
+import 'profile_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'book_detail.dart';
 
 class Home extends StatefulWidget {
+  const Home({super.key});
+
   @override
   _HomeState createState() => _HomeState();
 }
@@ -11,9 +17,10 @@ class _HomeState extends State<Home> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    HomePageContent(),
-    BooksPage(),
-    FavouritesPage(),
+    const HomePageContent(),
+    const BooksPage(),
+    const FavouritesPage(),
+    const ProfilePage(),
   ];
 
   @override
@@ -24,46 +31,43 @@ class _HomeState extends State<Home> {
       bottomNavigationBar: Material(
         elevation: 10,
         color: Colors.white,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(30),
-          topRight:
-              Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(30),
-            topRight:
-                Radius.circular(30),
+            topRight: Radius.circular(30),
           ),
-          child: Container(
+          child: SizedBox(
             height: 80,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              padding: const EdgeInsets.symmetric(horizontal: 0.0),
               child: BottomNavigationBar(
                 currentIndex: _currentIndex,
                 // Highlight the current tab
                 onTap: (index) {
                   setState(() {
-                    _currentIndex =
-                        index;
+                    _currentIndex = index;
                   });
                 },
-                selectedItemColor: Color(0xFFFFCF23),
+                selectedItemColor: const Color(0xFFFFCF23),
                 unselectedItemColor: Colors.black,
-                selectedLabelStyle: TextStyle(
+                selectedLabelStyle: const TextStyle(
                   fontFamily: 'Afacad',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
-                unselectedLabelStyle: TextStyle(
+                unselectedLabelStyle: const TextStyle(
                   fontFamily: 'Afacad',
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
-                iconSize: 40,
+                iconSize: 35,
                 backgroundColor: Colors.white,
                 elevation: 0,
-                items: [
+                items: const [
                   BottomNavigationBarItem(
                     icon: Icon(Icons.home),
                     label: 'Home',
@@ -76,6 +80,10 @@ class _HomeState extends State<Home> {
                     icon: Icon(Icons.favorite),
                     label: 'Favourites',
                   ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.person),
+                    label: 'Profile',
+                  ),
                 ],
               ),
             ),
@@ -86,14 +94,123 @@ class _HomeState extends State<Home> {
   }
 }
 
-class HomePageContent extends StatelessWidget {
+class HomePageContent extends StatefulWidget {
+  const HomePageContent({super.key});
+
+  @override
+  _HomePageContentState createState() => _HomePageContentState();
+}
+
+class _HomePageContentState extends State<HomePageContent> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, String>> _trendingBooks = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTrendingBooks();
+  }
+
+  Future<void> _fetchTrendingBooks() async {
+    final apiUrl =
+        'https://www.googleapis.com/books/v1/volumes?q=subject:fiction&orderBy=relevance&maxResults=40';
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<Map<String, String>> books = [];
+
+        for (var item in data['items'] ?? []) {
+          final volumeInfo = item['volumeInfo'];
+          books.add({
+            'title': volumeInfo['title'] ?? 'Unknown Title',
+            'author': (volumeInfo['authors'] != null)
+                ? volumeInfo['authors'][0]
+                : 'Unknown Author',
+            'thumbnail': volumeInfo['imageLinks']?['thumbnail'] ?? '',
+            'description':
+                volumeInfo['description'] ?? 'No description available',
+            'previewLink': volumeInfo['previewLink'] ?? '',
+            'rating': volumeInfo['averageRating']?.toString() ?? 'N/A',
+            'id': item['id'] ?? 'Unknown ID',
+          });
+        }
+
+        // Sort books by rating
+        books.sort((a, b) {
+          final ratingA = double.tryParse(a['rating'] ?? '0') ?? 0;
+          final ratingB = double.tryParse(b['rating'] ?? '0') ?? 0;
+          return ratingB.compareTo(ratingA);
+        });
+
+        setState(() {
+          _trendingBooks = books;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _searchBooks(String query) async {
+    final apiUrl =
+        'https://www.googleapis.com/books/v1/volumes?q=$query&maxResults=10';
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<Map<String, String>> books = [];
+
+        for (var item in data['items'] ?? []) {
+          final volumeInfo = item['volumeInfo'];
+          books.add({
+            'title': volumeInfo['title'] ?? 'Unknown Title',
+            'author': (volumeInfo['authors'] != null)
+                ? volumeInfo['authors'][0]
+                : 'Unknown Author',
+            'thumbnail': volumeInfo['imageLinks']?['thumbnail'] ?? '',
+            'description':
+                volumeInfo['description'] ?? 'No description available',
+            'previewLink': volumeInfo['previewLink'] ?? '',
+            'rating': volumeInfo['averageRating']?.toString() ?? 'N/A',
+          });
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SearchResultsPage(books: books),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           Container(
-            color: Color(0xFFFFFBEA),
+            color: const Color(0xFFFFFBEA),
           ),
           Center(
             child: SingleChildScrollView(
@@ -103,7 +220,7 @@ class HomePageContent extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 30, vertical: 10),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
                           color: Colors.black12,
@@ -113,8 +230,8 @@ class HomePageContent extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               'Home',
@@ -122,26 +239,21 @@ class HomePageContent extends StatelessWidget {
                                 fontFamily: 'Afacad',
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
                               ),
-                            ),
-                            Icon(
-                              Icons.notifications,
-                              color: Colors.black,
-                              size: 28,
                             ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 10),
                         TextField(
-                          style: TextStyle(
+                          controller: _searchController,
+                          style: const TextStyle(
                             fontFamily: 'Afacad',
                             fontSize: 16,
                             color: Colors.black,
                           ),
                           decoration: InputDecoration(
                             labelText: 'Search for books',
-                            labelStyle: TextStyle(
+                            labelStyle: const TextStyle(
                               fontFamily: 'Afacad',
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -153,448 +265,66 @@ class HomePageContent extends StatelessWidget {
                             ),
                             filled: true,
                             fillColor: Colors.grey[200],
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                               vertical: 10,
                               horizontal: 20,
                             ),
-                            suffixIcon: Padding(
-                              padding: const EdgeInsets.only(right: 15),
-                              child: Icon(
+                            suffixIcon: IconButton(
+                              icon: const Icon(
                                 Icons.search,
                                 color: Color(0xFFFFCF23),
                                 size: 28,
                               ),
+                              onPressed: () {
+                                if (_searchController.text.isNotEmpty) {
+                                  _searchBooks(_searchController.text);
+                                }
+                              },
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-
-                  SizedBox(height: 20),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Trending',
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Trending Books',
                           style: TextStyle(
-                            fontFamily: 'Afacad',
-                            fontSize: 25,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
                           ),
                         ),
-                        SizedBox(height: 10),
-
-                        //Paceholder 1
-                        Container(
-                          height: 150,
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Book Image
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.yellow,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                    ),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                    ),
-                                    child: Image.asset(
-                                      'assets/book1.jpg',
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              //Boook Description
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.only(
-                                      topRight: Radius.circular(10),
-                                      bottomRight: Radius.circular(10),
-                                    ),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              'TITLE',
-                                              style: TextStyle(
-                                                fontFamily: 'Afacad',
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                            Spacer(),
-                                            GestureDetector(
-                                              onTap: () {
-                                                print("Heart Icon Clicked");
-                                              },
-                                              child: Icon(
-                                                Icons.favorite_border,
-                                                color: Color(0xFFFFCF23),
-                                                size: 25,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 10),
-
-                                        Flexible(
-                                          child: Text(
-                                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore...XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-                                            style: TextStyle(
-                                              fontFamily: 'Afacad',
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.grey,
-                                            ),
+                        const SizedBox(height: 10),
+                        _isLoading
+                            ? const CircularProgressIndicator()
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _trendingBooks.length,
+                                itemBuilder: (context, index) {
+                                  final book = _trendingBooks[index];
+                                  return ListTile(
+                                    leading: book['thumbnail']!.isNotEmpty
+                                        ? Image.network(book['thumbnail']!)
+                                        : const Icon(Icons.book),
+                                    title: Text(book['title']!),
+                                    subtitle: Text('by ${book['author']}'),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => BookDetailPage(
+                                            title: book['title']!,
+                                            author: book['author']!,
+                                            description: book['description']!,
+                                            imagePath: book['thumbnail']!,
+                                            previewLink: book['previewLink']!,
+                                            rating: book['rating']!,
+                                            bookId: book['id']!,
                                           ),
                                         ),
-
-                                        SizedBox(height: 15),
-
-                                        Row(
-                                          children: [
-                                            BookRatingWidget(),
-                                            Spacer(),
-                                            SizedBox(height: 15),
-                                            SizedBox(
-                                              height: 25,
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.pushNamed(context, 'home');
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.black,
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(15),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  "Read",
-                                                  style: TextStyle(
-                                                    fontFamily: 'Afacad',
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                      );
+                                    },
+                                  );
+                                },
                               ),
-                            ],
-                          ),
-                        ),
-
-                        SizedBox(height: 15),
-
-                        //Paceholder 1
-                        Container(
-                          height: 150,
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Book Image
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.yellow,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                    ),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                    ),
-                                    child: Image.asset(
-                                      'assets/book1.jpg',
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              //Boook Description
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.only(
-                                      topRight: Radius.circular(10),
-                                      bottomRight: Radius.circular(10),
-                                    ),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              'TITLE',
-                                              style: TextStyle(
-                                                fontFamily: 'Afacad',
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                            Spacer(),
-                                            GestureDetector(
-                                              onTap: () {
-                                                print("Heart Icon Clicked");
-                                              },
-                                              child: Icon(
-                                                Icons.favorite_border,
-                                                color: Color(0xFFFFCF23),
-                                                size: 25,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 10),
-
-                                        Flexible(
-                                          child: Text(
-                                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore...XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-                                            style: TextStyle(
-                                              fontFamily: 'Afacad',
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-
-                                        SizedBox(height: 15),
-
-                                        Row(
-                                          children: [
-                                            BookRatingWidget(),
-                                            Spacer(),
-                                            SizedBox(height: 15),
-                                            SizedBox(
-                                              height: 25,
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.pushNamed(context, 'home');
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.black,
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(15),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  "Read",
-                                                  style: TextStyle(
-                                                    fontFamily: 'Afacad',
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        SizedBox(height: 15),
-
-                        //Paceholder 3
-                        Container(
-                          height: 150,
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Book Image
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.yellow,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                    ),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                    ),
-                                    child: Image.asset(
-                                      'assets/book1.jpg',
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              //Boook Description
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.only(
-                                      topRight: Radius.circular(10),
-                                      bottomRight: Radius.circular(10),
-                                    ),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              'TITLE',
-                                              style: TextStyle(
-                                                fontFamily: 'Afacad',
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                            Spacer(),
-                                            GestureDetector(
-                                              onTap: () {
-                                                print("Heart Icon Clicked");
-                                              },
-                                              child: Icon(
-                                                Icons.favorite_border,
-                                                color: Color(0xFFFFCF23),
-                                                size: 25,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 10),
-
-                                        Flexible(
-                                          child: Text(
-                                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore...XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-                                            style: TextStyle(
-                                              fontFamily: 'Afacad',
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-
-                                        SizedBox(height: 15),
-
-                                        Row(
-                                          children: [
-                                            BookRatingWidget(),
-                                            Spacer(),
-                                            SizedBox(height: 15),
-                                            SizedBox(
-                                              height: 25,
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.pushNamed(context, 'home');
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.black,
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(15),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  "Read",
-                                                  style: TextStyle(
-                                                    fontFamily: 'Afacad',
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -608,34 +338,46 @@ class HomePageContent extends StatelessWidget {
   }
 }
 
-class BookRatingWidget extends StatefulWidget {
-  @override
-  _BookRatingWidgetState createState() => _BookRatingWidgetState();
-}
+class SearchResultsPage extends StatelessWidget {
+  final List<Map<String, String>> books;
 
-class _BookRatingWidgetState extends State<BookRatingWidget> {
-  int _rating = 0;
+  const SearchResultsPage({super.key, required this.books});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(5, (index) {
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _rating = index + 1; // Update rating
-            });
-          },
-          child: Icon(
-            index < _rating ? Icons.star : Icons.star_border,
-            // Filled stars for rating, empty for unfilled
-            color: Colors.amber,
-            size: 18,
-          ),
-        );
-      }),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Search Results'),
+      ),
+      body: ListView.builder(
+        itemCount: books.length,
+        itemBuilder: (context, index) {
+          final book = books[index];
+          return ListTile(
+            leading: book['thumbnail']!.isNotEmpty
+                ? Image.network(book['thumbnail']!)
+                : const Icon(Icons.book),
+            title: Text(book['title']!),
+            subtitle: Text('by ${book['author']}'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BookDetailPage(
+                    title: book['title']!,
+                    author: book['author']!,
+                    description: book['description']!,
+                    imagePath: book['thumbnail']!,
+                    previewLink: book['previewLink']!,
+                    rating: book['rating']!,
+                    bookId: book['id'] ?? 'Unknown ID',
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
-
-

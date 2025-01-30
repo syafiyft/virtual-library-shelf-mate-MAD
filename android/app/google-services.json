@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "879426671301",
+    "project_id": "mad-virtual-library",
+    "storage_bucket": "mad-virtual-library.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:879426671301:android:382056b90fbf5774ddd6ac",
+        "android_client_info": {
+          "package_name": "com.virtual.library"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDt49r8aLBVDqIaDwsOrhLEgr1yiKXAqa0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
