@@ -26,6 +26,7 @@ class FavouritesPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const SizedBox(height: 100),
                         Text(
                           'Favourites',
                           style: TextStyle(

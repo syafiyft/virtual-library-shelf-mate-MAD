@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'books_page.dart';
 import 'favourites_page.dart';
-import 'profile_page.dart';
+import 'settings_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'book_detail.dart';
@@ -20,7 +20,7 @@ class _HomeState extends State<Home> {
     const HomePageContent(),
     const BooksPage(),
     const FavouritesPage(),
-    const ProfilePage(),
+    const SettingsPage(),
   ];
 
   @override
@@ -41,7 +41,7 @@ class _HomeState extends State<Home> {
             topRight: Radius.circular(30),
           ),
           child: SizedBox(
-            height: 80,
+            height: 108,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 0.0),
               child: BottomNavigationBar(
@@ -64,7 +64,7 @@ class _HomeState extends State<Home> {
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
-                iconSize: 35,
+                iconSize: 40,
                 backgroundColor: Colors.white,
                 elevation: 0,
                 items: const [
@@ -81,8 +81,8 @@ class _HomeState extends State<Home> {
                     label: 'Favourites',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.person),
-                    label: 'Profile',
+                    icon: Icon(Icons.settings),
+                    label: 'Settings',
                   ),
                 ],
               ),
@@ -219,7 +219,7 @@ class _HomePageContentState extends State<HomePageContent> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 10),
+                        horizontal: 30, vertical: 0),
                     decoration: const BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
@@ -230,6 +230,7 @@ class _HomePageContentState extends State<HomePageContent> {
                     ),
                     child: Column(
                       children: [
+                        const SizedBox(height: 50),
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -291,7 +292,6 @@ class _HomePageContentState extends State<HomePageContent> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 10),
                         _isLoading
                             ? const CircularProgressIndicator()
                             : ListView.builder(

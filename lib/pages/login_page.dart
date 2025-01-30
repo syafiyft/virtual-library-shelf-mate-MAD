@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
 import 'package:flutter/gestures.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'home_page.dart';
 
-class LogInPage extends StatelessWidget {
+class LogInPage extends StatefulWidget {
   const LogInPage({super.key});
+
+  @override
+  State<LogInPage> createState() => _LogInPageState();
+
+}
+
+class _LogInPageState extends State<LogInPage> {
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,15 +69,16 @@ class LogInPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: TextField(
-                      style: TextStyle(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: TextFormField(
+                      controller: _emailController,
+                      style: const TextStyle(
                         fontFamily: 'Afacad',
                         fontSize: 16,
                         color: Colors.black,
                       ),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Email',
                         labelStyle: TextStyle(
                           fontFamily: 'Afacad',
@@ -72,15 +92,17 @@ class LogInPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: TextField(
-                      style: TextStyle(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: TextFormField(
+                      obscureText: true,
+                      controller: _passwordController,
+                      style: const TextStyle(
                         fontFamily: 'Afacad',
                         fontSize: 16,
                         color: Colors.black,
                       ),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Password',
                         labelStyle: TextStyle(
                           fontFamily: 'Afacad',
@@ -110,7 +132,12 @@ class LogInPage extends StatelessWidget {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, 'home');
+                      if(_emailController.text.isNotEmpty && _passwordController.text.length > 6) {
+                        login();
+                      }
+                      else {
+                        debugPrint("Email is empty or password is invalid");
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFC21A),
@@ -174,4 +201,22 @@ class LogInPage extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> login() async {
+    final auth = FirebaseAuth.instance;
+    await auth.signInWithEmailAndPassword(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    if(auth != null) {
+      debugPrint("User logged in");
+      Navigator.push(context,
+        MaterialPageRoute(
+          builder: (context) => const Home(),
+        ),
+      );
+    }
+  }
+
 }

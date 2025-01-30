@@ -1,61 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'login_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
   @override
-  _SignUpPageState createState() => _SignUpPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  // final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // Future<UserCredential?> signUp(String email, String password) async {
-  //   try {
-  //     return await FirebaseAuth.instance.createUserWithEmailAndPassword(
-  //       email: email,
-  //       password: password,
-  //     );
-  //   } catch (e) {
-  //     print("Sign-up error: $e");
-  //     return null;
-  //   }
-  // }
-
-  // void _submit() async {
-  //   if (_formKey.currentState!.validate()) {
-  //     setState(() {
-  //       _isLoading = true;
-  //     });
-
-  //     final user =
-  //         await signUp(_emailController.text, _passwordController.text);
-
-  //     setState(() {
-  //       _isLoading = false;
-  //     });
-
-  //     if (user != null) {
-  //       // Navigate to the next page or show a success message
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Sign-up successful!')),
-  //       );
-  //       Navigator.push(context,
-  //           MaterialPageRoute(builder: (context) => const LogInPage()));
-  //     } else {
-  //       // Show an error message
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Sign-up failed. Please try again.')),
-  //       );
-  //     }
-  //   }
-  // }
+  @override
+  void dispose() {
+    super.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +76,29 @@ class _SignUpPageState extends State<SignUpPage> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: TextFormField(
+                            controller: _nameController,
+                            style: const TextStyle(
+                              fontFamily: 'Afacad',
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Name',
+                              labelStyle: TextStyle(
+                                fontFamily: 'Afacad',
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: TextFormField(
                             controller: _emailController,
                             style: const TextStyle(
                               fontFamily: 'Afacad',
@@ -127,12 +117,6 @@ class _SignUpPageState extends State<SignUpPage> {
                               filled: true,
                               fillColor: Colors.white,
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              return null;
-                            },
                           ),
                         ),
                         Padding(
@@ -157,43 +141,48 @@ class _SignUpPageState extends State<SignUpPage> {
                               filled: true,
                               fillColor: Colors.white,
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a password';
-                              }
-                              return null;
-                            },
                           ),
                         ),
+                        const Padding(padding: EdgeInsets.only(right: 100),
+                        child: Text("*Password must have at least 7 characters.",
+                          style: TextStyle(
+                            fontFamily: 'Afacad',
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),),
+                        ),
                         const SizedBox(height: 20),
-                        _isLoading
-                            ? const CircularProgressIndicator()
-                            : ElevatedButton(
-                                onPressed: () {
-                                  //_submit();
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFFC21A),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 110,
-                                  ),
-                                  shadowColor: Colors.black,
-                                  elevation: 10,
-                                ),
-                                child: const Text(
-                                  'Create Account',
-                                  style: TextStyle(
-                                    fontFamily: 'Afacad',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
+                        ElevatedButton(
+                          onPressed: () {
+                            if(_nameController.text.isNotEmpty && _emailController.text.isNotEmpty && _passwordController.text.length > 6) {
+                              signup();
+                            }
+                            else {
+                              debugPrint("Name/Email is empty or password is invalid");
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFC21A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 110,
+                            ),
+                            shadowColor: Colors.black,
+                            elevation: 10,
+                          ),
+                          child: const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              fontFamily: 'Afacad',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 20),
                         Image.asset(
                           'assets/Graduation.png',
@@ -234,4 +223,22 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
+
+  Future<void> signup() async {
+    final auth = FirebaseAuth.instance;
+    await auth.createUserWithEmailAndPassword(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    if(auth != null) {
+      debugPrint("User created successfully");
+      Navigator.push(context,
+        MaterialPageRoute(
+          builder: (context) => const LogInPage(),
+        ),
+      );
+    }
+  }
+
 }

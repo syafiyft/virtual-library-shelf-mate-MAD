@@ -83,6 +83,7 @@ class _BooksPageState extends State<BooksPage> {
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const SizedBox(height: 100),
                         Text(
                           'Books',
                           style: TextStyle(
@@ -94,7 +95,6 @@ class _BooksPageState extends State<BooksPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
                     TextField(
                       controller: _searchController,
                       style: const TextStyle(

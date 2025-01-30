@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"ios":{"default":{"projectId":"mad-virtual-library","appId":"1:879426671301:ios:5d90964cac9495d3ddd6ac","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"mad-virtual-library","configurations":{"ios":"1:879426671301:ios:5d90964cac9495d3ddd6ac"}}}}}}
