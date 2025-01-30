@@ -124,6 +124,7 @@ The **Virtual Library: ShelfMate** app follows a structured and user-friendly fl
     - **Sign Up** for a new account.
     - **Log In** using Firebase Authentication or an API-based authentication system.
     - **Upon creating a new password, it must be at least 7 characters.**
+    - **You may use the provided email and password to test the login function. Email: zulhzmi27@gmail.com Password: 1234567**
 
 <br>
 
